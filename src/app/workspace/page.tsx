@@ -9,6 +9,7 @@ import { FindingsPanel } from "@/components/findings/FindingsPanel";
 import { PlanDrawer } from "@/components/plan/PlanDrawer";
 import { ScorePanel } from "@/components/score/ScorePanel";
 import { ServiceList } from "@/components/services/ServiceList";
+import { StretchPanel } from "@/components/stretch/StretchPanel";
 import { ToolInspector } from "@/components/tool-inspector/ToolInspector";
 import { CompatibilityBanner } from "@/components/webmcp/CompatibilityBanner";
 import { useRegisterTools } from "@/webmcp/use-register-tools";
@@ -79,6 +80,7 @@ function WorkspaceInner() {
         </section>
         <aside className="flex flex-col gap-4">
           <PlanDrawer />
+          <StretchPanel />
           <ActivityLog />
           <ToolInspector />
         </aside>

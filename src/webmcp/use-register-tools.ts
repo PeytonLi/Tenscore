@@ -4,7 +4,9 @@ import { useEffect } from "react";
 import { useRegistrationPhase } from "@/store/tenscore-store";
 import { zodToJsonSchema } from "./schemas";
 import {
+  addServiceSchema,
   applySchema,
+  budgetSchema,
   emptySchema,
   findingTypesSchema,
   inspectSchema,
@@ -63,6 +65,27 @@ function toolsForPhase(
       inputSchema: zodToJsonSchema(simulateSchema),
       annotations: { readOnlyHint: true },
     },
+    {
+      name: "propose_budget_plan",
+      description:
+        "Propose permission changes to reach a target Tenscore while preserving named features. Optionally stage them.",
+      inputSchema: zodToJsonSchema(budgetSchema),
+      annotations: { readOnlyHint: false },
+    },
+    {
+      name: "get_redacted_report",
+      description:
+        "Build a shareable redacted privacy report without raw purpose text.",
+      inputSchema: zodToJsonSchema(emptySchema),
+      annotations: { readOnlyHint: true, untrustedContentHint: true },
+    },
+    {
+      name: "get_exposure_timeline",
+      description:
+        "Summarize how exposure grew as grants were added over time.",
+      inputSchema: zodToJsonSchema(emptySchema),
+      annotations: { readOnlyHint: true },
+    },
   ];
 
   if (phase === "approved") {
@@ -93,6 +116,13 @@ function toolsForPhase(
           "Replace the editable staged plan and update the visible preview.",
         inputSchema: zodToJsonSchema(stageSchema),
         annotations: { readOnlyHint: false },
+      },
+      {
+        name: "add_manual_service",
+        description:
+          "Add a fictional manual service and grant to the demo profile.",
+        inputSchema: zodToJsonSchema(addServiceSchema),
+        annotations: { readOnlyHint: false, untrustedContentHint: true },
       },
       {
         name: "undo_last_change",
@@ -126,6 +156,13 @@ function toolsForPhase(
         annotations: { readOnlyHint: false },
       },
       {
+        name: "add_manual_service",
+        description:
+          "Add a fictional manual service and grant to the demo profile.",
+        inputSchema: zodToJsonSchema(addServiceSchema),
+        annotations: { readOnlyHint: false, untrustedContentHint: true },
+      },
+      {
         name: "reset_demo_profile",
         description: "Restore the selected profile seed data.",
         inputSchema: zodToJsonSchema(emptySchema),
@@ -142,6 +179,13 @@ function toolsForPhase(
         "Replace the editable staged plan and update the visible preview.",
       inputSchema: zodToJsonSchema(stageSchema),
       annotations: { readOnlyHint: false },
+    },
+    {
+      name: "add_manual_service",
+      description:
+        "Add a fictional manual service and grant to the demo profile.",
+      inputSchema: zodToJsonSchema(addServiceSchema),
+      annotations: { readOnlyHint: false, untrustedContentHint: true },
     },
     {
       name: "reset_demo_profile",

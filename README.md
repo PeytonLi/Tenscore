@@ -29,7 +29,7 @@ pnpm build
 
 ## Live demo
 
-Production: https://tenscore.vercel.app
+Production: https://tenscore-two.vercel.app
 
 ## WebMCP
 
@@ -57,7 +57,15 @@ Tools register through `document.modelContext.registerTool` with `AbortControlle
 - **The Forgotten Accounts** — stale unused grants
 - **The Minimalist** — fewer services, high-sensitivity onward sharing
 
-## Architecture
+## Stretch features
+
+- **Privacy budget** — propose/stage a plan to hit a target score while preserving named features (`propose_budget_plan`)
+- **Exposure timeline** — scrub how grants accumulated over time
+- **Snapshot import/export** — versioned `tenscore-snapshot` JSON (formatVersion 1)
+- **Redacted report** — shareable markdown without raw purpose text
+- **Add manual service** — UI form + `add_manual_service` WebMCP tool for fictional services
+
+Real third-party OAuth revocation remains out of scope.
 
 ```text
 UI controls ─┐

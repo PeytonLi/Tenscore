@@ -43,6 +43,22 @@ export const applySchema = z.object({
 
 export const emptySchema = z.object({}).strict();
 
+export const budgetSchema = z.object({
+  targetScore: z.number().min(0).max(10),
+  preserveFeatures: z.array(z.string()).optional(),
+  stage: z.boolean().optional(),
+});
+
+export const addServiceSchema = z.object({
+  name: z.string().min(1).max(60),
+  purpose: z.string().min(1).max(120),
+  dataCategoryId: z.string().min(1),
+  level: z
+    .enum(["metadata", "read", "write", "background"])
+    .optional(),
+  necessity: z.enum(["required", "useful", "unused"]).optional(),
+});
+
 export function zodToJsonSchema(schema: z.ZodType): Record<string, unknown> {
   // Narrow JSON Schema for WebMCP; keep enums and required explicit.
   if (schema === findingTypesSchema) {
@@ -130,6 +146,47 @@ export function zodToJsonSchema(schema: z.ZodType): Record<string, unknown> {
         approvalId: { type: "string", description: "UI approval id" },
       },
       required: ["approvalId"],
+      additionalProperties: false,
+    };
+  }
+  if (schema === budgetSchema) {
+    return {
+      type: "object",
+      properties: {
+        targetScore: {
+          type: "number",
+          minimum: 0,
+          maximum: 10,
+          description: "Desired Tenscore threshold",
+        },
+        preserveFeatures: {
+          type: "array",
+          items: { type: "string" },
+          description: "Feature names that must stay available",
+        },
+        stage: {
+          type: "boolean",
+          description: "If true, stage the proposed plan",
+        },
+      },
+      required: ["targetScore"],
+      additionalProperties: false,
+    };
+  }
+  if (schema === addServiceSchema) {
+    return {
+      type: "object",
+      properties: {
+        name: { type: "string", description: "Fictional service name" },
+        purpose: { type: "string", description: "Why access is requested" },
+        dataCategoryId: {
+          type: "string",
+          description: "Data category id to grant",
+        },
+        level: { enum: ["metadata", "read", "write", "background"] },
+        necessity: { enum: ["required", "useful", "unused"] },
+      },
+      required: ["name", "purpose", "dataCategoryId"],
       additionalProperties: false,
     };
   }

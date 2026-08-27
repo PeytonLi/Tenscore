@@ -2,6 +2,7 @@
 
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
+import { addManualService, type AddManualServiceInput } from "@/domain/add-service";
 import { DEMO_PROFILES, getProfile } from "@/data/profiles";
 import { hashPlan, normalizePlan } from "@/domain/approvals";
 import { deriveFindings } from "@/domain/findings";
@@ -19,6 +20,7 @@ import {
 import { computeTenscore, scoreLabel } from "@/domain/scoring";
 import { simulateChanges } from "@/domain/simulation";
 import type {
+  ConsentState,
   FindingType,
   PlannedChange,
 } from "@/domain/types";
@@ -56,6 +58,11 @@ type TenscoreStore = SessionState & {
   apply: (approvalId: string, actor?: "user" | "agent") => string | null;
   undo: (actor?: "user" | "agent") => string | null;
   reset: (actor?: "user" | "agent") => void;
+  importActiveState: (
+    state: ConsentState,
+    stagedPlan?: PlannedChange[],
+  ) => void;
+  addService: (input: AddManualServiceInput) => string | null;
   recordToolTrace: (entry: {
     name: string;
     durationMs: number;
@@ -148,6 +155,56 @@ export const useTenscoreStore = create<TenscoreStore>()(
           selectedGrantId: null,
           focus: {},
         });
+      },
+
+      importActiveState: (state, stagedPlan = []) => {
+        set({
+          active: structuredClone(state),
+          stagedPlan: structuredClone(stagedPlan),
+          approval: null,
+          undoSnapshot: null,
+          selectedGrantId: null,
+          focus: {},
+          activityLog: [
+            {
+              id: `log_import_${Date.now()}`,
+              at: new Date().toISOString(),
+              actor: "user",
+              action: "reset",
+              targetIds: [state.profileId],
+              result: "ok",
+              profileVersion: state.profileVersion,
+              message: "Imported Tenscore snapshot",
+            },
+            ...get().activityLog,
+          ],
+        });
+      },
+
+      addService: (input) => {
+        const result = addManualService(get().active, {
+          ...input,
+          now: new Date(),
+        });
+        if (!result.ok) return result.error.message;
+        set({
+          active: result.state,
+          approval: null,
+          activityLog: [
+            {
+              id: `log_add_${Date.now()}`,
+              at: new Date().toISOString(),
+              actor: "user",
+              action: "stage",
+              targetIds: [result.serviceId, ...result.grantIds],
+              result: "ok",
+              profileVersion: result.state.profileVersion,
+              message: `Added manual service ${input.name}`,
+            },
+            ...get().activityLog,
+          ],
+        });
+        return null;
       },
 
       recordToolTrace: (entry) => {

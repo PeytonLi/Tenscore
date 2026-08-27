@@ -1,10 +1,15 @@
+import { proposePrivacyBudgetPlan } from "@/domain/privacy-budget";
+import { buildRedactedReport } from "@/domain/report";
+import { buildExposureTimeline } from "@/domain/timeline";
 import { deriveFindings, filterFindings } from "@/domain/findings";
 import { computeTenscore } from "@/domain/scoring";
 import { simulateChanges } from "@/domain/simulation";
 import type { PlannedChange } from "@/domain/types";
 import { useTenscoreStore } from "@/store/tenscore-store";
 import {
+  addServiceSchema,
   applySchema,
+  budgetSchema,
   emptySchema,
   findingTypesSchema,
   inspectSchema,
@@ -238,6 +243,75 @@ async function runTool(name: string, rawArgs: unknown): Promise<ToolResult> {
         ok: true,
         summary: "Demo profile reset from seed",
         profileVersion: snapshot().active.profileVersion,
+      };
+    }
+    case "propose_budget_plan": {
+      const args = budgetSchema.parse(rawArgs);
+      const proposal = proposePrivacyBudgetPlan(state.active, {
+        targetScore: args.targetScore,
+        preserveFeatures: args.preserveFeatures,
+        now,
+      });
+      if (args.stage && proposal.changes.length > 0) {
+        useTenscoreStore.getState().stage(proposal.changes, "agent");
+      }
+      return {
+        ok: proposal.ok,
+        summary: proposal.ok
+          ? `Budget plan ${proposal.score.before} → ${proposal.score.after} (${proposal.changes.length} changes)`
+          : proposal.error.message,
+        profileVersion: snapshot().active.profileVersion,
+        score: proposal.score,
+        affectedIds: proposal.changes.map((change) => change.grantId),
+        nextSuggestedActions: proposal.ok
+          ? ["Ask user to review and approve the staged plan"]
+          : ["simulate_changes"],
+        error: proposal.ok
+          ? undefined
+          : { code: proposal.error.code, retryable: false },
+      };
+    }
+    case "get_redacted_report": {
+      emptySchema.parse(rawArgs ?? {});
+      const report = buildRedactedReport(state.active, { now });
+      return {
+        ok: true,
+        summary: `Redacted report score ${report.score} with ${report.findings.length} findings`,
+        profileVersion: state.active.profileVersion,
+        score: { before: report.score },
+        affectedIds: report.findings.map((finding) => finding.grantId),
+      };
+    }
+    case "get_exposure_timeline": {
+      emptySchema.parse(rawArgs ?? {});
+      const timeline = buildExposureTimeline(state.active, { now });
+      const latest = timeline.at(-1);
+      return {
+        ok: true,
+        summary: `Timeline has ${timeline.length} frames; latest score ${latest?.score ?? "n/a"}`,
+        profileVersion: state.active.profileVersion,
+        score: latest ? { before: latest.score } : undefined,
+        affectedIds: latest?.activeGrantIds.slice(0, 8),
+      };
+    }
+    case "add_manual_service": {
+      const args = addServiceSchema.parse(rawArgs);
+      const error = useTenscoreStore.getState().addService({
+        name: args.name,
+        purpose: args.purpose,
+        grants: [
+          {
+            dataCategoryId: args.dataCategoryId,
+            level: args.level ?? "read",
+            necessity: args.necessity ?? "useful",
+          },
+        ],
+      });
+      return {
+        ok: !error,
+        summary: error ?? `Added manual service ${args.name}`,
+        profileVersion: snapshot().active.profileVersion,
+        error: error ? { code: "ADD_SERVICE_FAILED", retryable: false } : undefined,
       };
     }
     default:
