@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Suspense, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import { ActivityLog } from "@/components/activity/ActivityLog";
+import { ConsentMap } from "@/components/consent-map/ConsentMap";
 import { FindingsPanel } from "@/components/findings/FindingsPanel";
 import { PlanDrawer } from "@/components/plan/PlanDrawer";
 import { ScorePanel } from "@/components/score/ScorePanel";
@@ -72,7 +73,8 @@ function WorkspaceInner() {
           <ScorePanel />
           <FindingsPanel />
         </aside>
-        <section className="min-h-[420px]">
+        <section className="flex min-h-[420px] flex-col gap-4">
+          <ConsentMap />
           <ServiceList />
         </section>
         <aside className="flex flex-col gap-4">

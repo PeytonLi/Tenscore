@@ -22,6 +22,7 @@ import type {
   FindingType,
   PlannedChange,
 } from "@/domain/types";
+import type { GraphFilter } from "@/domain/graph";
 
 export type FocusState = {
   dataCategoryId?: string;
@@ -34,6 +35,7 @@ type TenscoreStore = SessionState & {
   selectedGrantId: string | null;
   focus: FocusState;
   findingFilter: FindingType[] | "all";
+  graphFilter: GraphFilter;
   toolTrace: Array<{
     id: string;
     name: string;
@@ -47,6 +49,7 @@ type TenscoreStore = SessionState & {
   setSelectedGrantId: (grantId: string | null) => void;
   setFocus: (focus: FocusState) => void;
   setFindingFilter: (filter: FindingType[] | "all") => void;
+  setGraphFilter: (filter: GraphFilter) => void;
   stage: (changes: PlannedChange[], actor?: "user" | "agent") => string | null;
   clearPlan: (actor?: "user" | "agent") => void;
   approve: () => string | null;
@@ -81,6 +84,7 @@ export const useTenscoreStore = create<TenscoreStore>()(
       selectedGrantId: null,
       focus: {},
       findingFilter: "all",
+      graphFilter: "all",
       toolTrace: [],
 
       selectProfile: (profileId) => {
@@ -90,12 +94,14 @@ export const useTenscoreStore = create<TenscoreStore>()(
           selectedGrantId: null,
           focus: {},
           findingFilter: "all",
+          graphFilter: "all",
         });
       },
 
       setSelectedGrantId: (grantId) => set({ selectedGrantId: grantId }),
       setFocus: (focus) => set({ focus }),
       setFindingFilter: (filter) => set({ findingFilter: filter }),
+      setGraphFilter: (filter) => set({ graphFilter: filter }),
 
       stage: (changes, actor = "user") => {
         const result = stageChanges(get(), changes, { actor, now: new Date() });

@@ -16,7 +16,7 @@ export function ServiceList() {
         Connected services
       </h2>
       <p className="mt-1 text-sm text-muted">
-        Keyboard-friendly list view. Graph visualization ships next.
+        Equivalent list view for keyboard users and detail inspection.
       </p>
       <ul className="mt-4 space-y-3">
         {active.services.map((service) => {

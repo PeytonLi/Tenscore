@@ -16,16 +16,20 @@ This is an **interactive simulation** with fictional services and synthetic data
 ## Quick start
 
 ```bash
-npm install
-npm run dev
+pnpm install
+pnpm dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000).
 
 ```bash
-npm test
-npm run build
+pnpm test
+pnpm build
 ```
+
+## Live demo
+
+Production: https://tenscore.vercel.app
 
 ## WebMCP
 
