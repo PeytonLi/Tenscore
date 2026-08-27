@@ -9,7 +9,7 @@ const profileBlurb: Record<string, string> = {
 
 export default function HomePage() {
   return (
-    <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col px-6 py-12 md:py-16">
+    <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col px-6 py-12 md:py-16" id="main-content">
       <p className="font-[family-name:var(--font-display)] text-sm font-semibold tracking-[0.18em] text-teal uppercase">
         Tenscore
       </p>

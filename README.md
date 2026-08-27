@@ -11,7 +11,8 @@ This is an **interactive simulation** with fictional services and synthetic data
 - Next.js App Router, React, TypeScript, Tailwind CSS
 - Zustand for client demo state
 - Zod-validated WebMCP tool inputs
-- Vitest for deterministic domain tests
+- Vitest for deterministic domain + agent evals
+- Playwright for the judge journey
 
 ## Quick start
 
@@ -23,9 +24,12 @@ pnpm dev
 Open [http://localhost:3000](http://localhost:3000).
 
 ```bash
-pnpm test
+pnpm test          # unit/domain/evals
+pnpm test:e2e      # Playwright judge path
 pnpm build
 ```
+
+See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for module boundaries and the safety model.
 
 ## Live demo
 
@@ -35,12 +39,14 @@ Production: https://tenscore-two.vercel.app
 
 Tools register through `document.modelContext.registerTool` with `AbortController` lifecycle cleanup.
 
-| Phase | Tools |
+**Always-on read/analysis tools:** `get_consent_overview`, `find_risky_access`, `trace_data_flow`, `inspect_permission`, `simulate_changes`, `propose_budget_plan`, `get_redacted_report`, `get_exposure_timeline`
+
+| Phase | Extra tools |
 |---|---|
-| No plan | read tools + `stage_changes` + `reset_demo_profile` |
+| No plan | `stage_changes`, `add_manual_service`, `reset_demo_profile` |
 | Staged | + `clear_staged_plan` |
-| Approved in UI | + `apply_approved_changes` (apply only) |
-| After apply | + `undo_last_change` |
+| Approved in UI | `clear_staged_plan`, `apply_approved_changes` (no stage) |
+| After apply | `stage_changes`, `add_manual_service`, `undo_last_change`, `reset_demo_profile` |
 
 ### Setup for judges
 
@@ -66,14 +72,6 @@ Tools register through `document.modelContext.registerTool` with `AbortControlle
 - **Add manual service** — UI form + `add_manual_service` WebMCP tool for fictional services
 
 Real third-party OAuth revocation remains out of scope.
-
-```text
-UI controls ─┐
-             ├─> domain/* (pure) ─> Zustand store ─> panels
-WebMCP tools ┘
-```
-
-Domain modules are covered by unit tests first. UI and WebMCP call the same mutation functions.
 
 ## License
 

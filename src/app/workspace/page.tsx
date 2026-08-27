@@ -33,8 +33,11 @@ function WorkspaceInner() {
   }, [searchParams, selectProfile, selectedProfileId]);
 
   return (
-    <div className="mx-auto flex w-full max-w-[1400px] flex-1 flex-col gap-4 px-4 py-4 md:px-6">
-      <header className="flex flex-wrap items-center justify-between gap-3">
+    <div
+      id="main-content"
+      className="mx-auto flex w-full max-w-[1400px] flex-1 flex-col gap-4 px-4 py-4 md:px-6"
+    >
+      <header className="flex flex-wrap items-center justify-between gap-3" role="banner">
         <div>
           <Link
             href="/"

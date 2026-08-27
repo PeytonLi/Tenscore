@@ -32,7 +32,15 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       lang="en"
       className={`${display.variable} ${body.variable} ${mono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col">
+        <a
+          href="#main-content"
+          className="absolute left-4 top-4 z-50 -translate-y-16 rounded-lg bg-teal px-3 py-2 text-sm font-medium text-white transition focus:translate-y-0"
+        >
+          Skip to main content
+        </a>
+        {children}
+      </body>
     </html>
   );
 }

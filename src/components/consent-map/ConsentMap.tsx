@@ -4,7 +4,9 @@ import { useMemo } from "react";
 import {
   Background,
   Controls,
+  Handle,
   MarkerType,
+  Position,
   ReactFlow,
   type Edge,
   type Node,
@@ -47,11 +49,21 @@ function ConsentNode({ data }: NodeProps) {
 
   return (
     <div
+      role="group"
+      aria-label={`${nodeData.kind}: ${nodeData.label}${
+        nodeData.severity && nodeData.severity !== "none"
+          ? `, ${nodeData.severity} risk`
+          : ""
+      }${nodeData.inPlan ? ", in staged plan" : ""}`}
       className={`px-3 py-2 text-center shadow-sm transition ${base} ${severityRing} ${
         nodeData.dimmed ? "opacity-30" : "opacity-100"
       } ${nodeData.inPlan ? "outline outline-2 outline-offset-2 outline-teal" : ""}`}
     >
+      <Handle type="target" position={Position.Left} className="!bg-teal !w-2 !h-2" />
       <p className="text-xs font-semibold">{nodeData.label}</p>
+      {nodeData.severity && nodeData.severity !== "none" ? (
+        <p className="sr-only">{nodeData.severity} risk</p>
+      ) : null}
       {nodeData.subtitle ? (
         <p
           className={`mt-0.5 text-[10px] ${
@@ -61,6 +73,7 @@ function ConsentNode({ data }: NodeProps) {
           {nodeData.subtitle}
         </p>
       ) : null}
+      <Handle type="source" position={Position.Right} className="!bg-teal !w-2 !h-2" />
     </div>
   );
 }
@@ -114,16 +127,20 @@ export function ConsentMap() {
       source: edge.source,
       target: edge.target,
       animated: edge.kind === "projected" || edge.inPlan,
+      className: edge.kind === "projected" || edge.inPlan ? "opacity-80" : undefined,
       style: {
         stroke:
           edge.kind === "share"
             ? "#9a6700"
-            : edge.kind === "projected"
+            : edge.kind === "projected" || edge.inPlan
               ? "#0f766e"
               : "#5c6f6d",
-        strokeWidth: edge.inPlan ? 2.5 : 1.5,
-        strokeDasharray: edge.kind === "share" || edge.kind === "projected" ? "6 4" : undefined,
-        opacity: edge.dimmed ? 0.25 : 1,
+        strokeWidth: edge.inPlan || edge.kind === "projected" ? 2.5 : 1.5,
+        strokeDasharray:
+          edge.kind === "share" || edge.kind === "projected" || edge.inPlan
+            ? "6 4"
+            : undefined,
+        opacity: edge.dimmed ? 0.25 : edge.kind === "projected" ? 0.85 : 1,
       },
       markerEnd: {
         type: MarkerType.ArrowClosed,
@@ -132,11 +149,14 @@ export function ConsentMap() {
         color:
           edge.kind === "share"
             ? "#9a6700"
-            : edge.kind === "projected"
+            : edge.kind === "projected" || edge.inPlan
               ? "#0f766e"
               : "#5c6f6d",
       },
-      label: edge.level,
+      label:
+        edge.kind === "projected" || edge.inPlan
+          ? `${edge.level ?? "change"} (planned)`
+          : edge.level,
       labelStyle: { fontSize: 10, fill: "#5c6f6d" },
       data: { grantId: edge.grantId },
     }));
@@ -152,14 +172,20 @@ export function ConsentMap() {
             Consent map
           </h2>
           <p className="text-xs text-muted">
-            Person → services → data categories → onward recipients
+            Person → services → data categories → onward recipients. Dashed teal
+            edges are staged projections; dashed amber edges are onward sharing.
           </p>
         </div>
-        <div className="flex flex-wrap gap-1.5">
+        <div
+          className="flex flex-wrap gap-1.5"
+          role="toolbar"
+          aria-label="Consent map filters"
+        >
           {FILTERS.map((filter) => (
             <button
               key={filter.id}
               type="button"
+              aria-pressed={graphFilter === filter.id}
               onClick={() => setGraphFilter(filter.id)}
               className={`rounded-lg px-2 py-1 text-xs font-medium focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal ${
                 graphFilter === filter.id

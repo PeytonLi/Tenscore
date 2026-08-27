@@ -8,7 +8,9 @@
     "start": "next start",
     "lint": "eslint",
     "test": "vitest run --config vitest.config.mts",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "test:evals": "vitest run --config vitest.config.mts src/evals src/webmcp/tool-catalog.test.ts",
+    "test:e2e": "playwright test"
   },
   "dependencies": {
     "@xyflow/react": "^12.11.5",
@@ -19,6 +21,7 @@
     "zustand": "^5.0.15"
   },
   "devDependencies": {
+    "@playwright/test": "^1.62.1",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
