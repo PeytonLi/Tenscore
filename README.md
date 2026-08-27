@@ -1,36 +1,68 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Tenscore
 
-## Getting Started
+> See who has your data. Understand why. Take back control.
 
-First, run the development server:
+Tenscore is a visual consent-control workspace for the [WebMCP Challenge](https://webmcp.devpost.com/). A person and a browser agent inspect a simulated personal-data ecosystem, stage a remediation plan, and apply changes only after explicit UI approval.
+
+This is an **interactive simulation** with fictional services and synthetic data. The Tenscore is an explainable heuristic, not a legal, compliance, or security assessment.
+
+## Stack
+
+- Next.js App Router, React, TypeScript, Tailwind CSS
+- Zustand for client demo state
+- Zod-validated WebMCP tool inputs
+- Vitest for deterministic domain tests
+
+## Quick start
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+npm test
+npm run build
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## WebMCP
 
-## Learn More
+Tools register through `document.modelContext.registerTool` with `AbortController` lifecycle cleanup.
 
-To learn more about Next.js, take a look at the following resources:
+| Phase | Tools |
+|---|---|
+| No plan | read tools + `stage_changes` + `reset_demo_profile` |
+| Staged | + `clear_staged_plan` |
+| Approved in UI | + `apply_approved_changes` (apply only) |
+| After apply | + `undo_last_change` |
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### Setup for judges
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+1. Use ChatGPT’s in-app browser, or Chrome 149+ with WebMCP testing enabled.
+2. Open the public HTTPS demo (or localhost).
+3. Pick **The Power User**.
+4. Prompt: *Find stale or excessive access, trace my precise location, and prepare a cleanup that preserves budgeting and photo backup.*
+5. Approve the plan in the UI, then ask the agent to apply it.
+6. Use **Reset profile** between judging runs.
 
-## Deploy on Vercel
+## Demo profiles
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- **The Power User** — broad active scopes
+- **The Forgotten Accounts** — stale unused grants
+- **The Minimalist** — fewer services, high-sensitivity onward sharing
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Architecture
+
+```text
+UI controls ─┐
+             ├─> domain/* (pure) ─> Zustand store ─> panels
+WebMCP tools ┘
+```
+
+Domain modules are covered by unit tests first. UI and WebMCP call the same mutation functions.
+
+## License
+
+MIT

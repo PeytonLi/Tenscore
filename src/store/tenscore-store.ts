@@ -1,0 +1,224 @@
+"use client";
+
+import { create } from "zustand";
+import { persist } from "zustand/middleware";
+import { DEMO_PROFILES, getProfile } from "@/data/profiles";
+import { hashPlan, normalizePlan } from "@/domain/approvals";
+import { deriveFindings } from "@/domain/findings";
+import {
+  applyApprovedChanges,
+  approvePlan,
+  clearStagedPlan,
+  profileToConsentState,
+  resetDemoProfile,
+  stageChanges,
+  undoLastChange,
+  type ActivityEntry,
+  type SessionState,
+} from "@/domain/mutations";
+import { computeTenscore, scoreLabel } from "@/domain/scoring";
+import { simulateChanges } from "@/domain/simulation";
+import type {
+  FindingType,
+  PlannedChange,
+} from "@/domain/types";
+
+export type FocusState = {
+  dataCategoryId?: string;
+  serviceId?: string;
+  grantIds?: string[];
+};
+
+type TenscoreStore = SessionState & {
+  selectedProfileId: string;
+  selectedGrantId: string | null;
+  focus: FocusState;
+  findingFilter: FindingType[] | "all";
+  toolTrace: Array<{
+    id: string;
+    name: string;
+    at: string;
+    durationMs: number;
+    args: unknown;
+    resultSummary: string;
+    ok: boolean;
+  }>;
+  selectProfile: (profileId: string) => void;
+  setSelectedGrantId: (grantId: string | null) => void;
+  setFocus: (focus: FocusState) => void;
+  setFindingFilter: (filter: FindingType[] | "all") => void;
+  stage: (changes: PlannedChange[], actor?: "user" | "agent") => string | null;
+  clearPlan: (actor?: "user" | "agent") => void;
+  approve: () => string | null;
+  apply: (approvalId: string, actor?: "user" | "agent") => string | null;
+  undo: (actor?: "user" | "agent") => string | null;
+  reset: (actor?: "user" | "agent") => void;
+  recordToolTrace: (entry: {
+    name: string;
+    durationMs: number;
+    args: unknown;
+    resultSummary: string;
+    ok: boolean;
+  }) => void;
+};
+
+function freshSession(profileId: string): SessionState {
+  const profile = getProfile(profileId) ?? DEMO_PROFILES[0]!;
+  return {
+    active: profileToConsentState(profile),
+    stagedPlan: [],
+    approval: null,
+    undoSnapshot: null,
+    activityLog: [],
+  };
+}
+
+export const useTenscoreStore = create<TenscoreStore>()(
+  persist(
+    (set, get) => ({
+      ...freshSession("power-user"),
+      selectedProfileId: "power-user",
+      selectedGrantId: null,
+      focus: {},
+      findingFilter: "all",
+      toolTrace: [],
+
+      selectProfile: (profileId) => {
+        set({
+          ...freshSession(profileId),
+          selectedProfileId: profileId,
+          selectedGrantId: null,
+          focus: {},
+          findingFilter: "all",
+        });
+      },
+
+      setSelectedGrantId: (grantId) => set({ selectedGrantId: grantId }),
+      setFocus: (focus) => set({ focus }),
+      setFindingFilter: (filter) => set({ findingFilter: filter }),
+
+      stage: (changes, actor = "user") => {
+        const result = stageChanges(get(), changes, { actor, now: new Date() });
+        set({ ...result.session });
+        return result.ok ? null : result.error.message;
+      },
+
+      clearPlan: (actor = "user") => {
+        const result = clearStagedPlan(get(), { actor, now: new Date() });
+        set({ ...result.session });
+      },
+
+      approve: () => {
+        const result = approvePlan(get(), { actor: "user", now: new Date() });
+        set({ ...result.session });
+        return result.ok ? result.session.approval!.id : result.error.message;
+      },
+
+      apply: (approvalId, actor = "agent") => {
+        const result = applyApprovedChanges(get(), {
+          approvalId,
+          actor,
+          now: new Date(),
+        });
+        set({ ...result.session });
+        return result.ok ? null : result.error.message;
+      },
+
+      undo: (actor = "user") => {
+        const result = undoLastChange(get(), { actor, now: new Date() });
+        set({ ...result.session });
+        return result.ok ? null : result.error.message;
+      },
+
+      reset: (actor = "user") => {
+        const profile =
+          getProfile(get().selectedProfileId) ?? DEMO_PROFILES[0]!;
+        const result = resetDemoProfile(get(), profile, {
+          actor,
+          now: new Date(),
+        });
+        set({
+          ...result.session,
+          selectedGrantId: null,
+          focus: {},
+        });
+      },
+
+      recordToolTrace: (entry) => {
+        set({
+          toolTrace: [
+            {
+              id: `trace_${Date.now()}`,
+              at: new Date().toISOString(),
+              ...entry,
+            },
+            ...get().toolTrace,
+          ].slice(0, 40),
+        });
+      },
+    }),
+    {
+      name: "tenscore-demo",
+      partialize: (state) => ({
+        selectedProfileId: state.selectedProfileId,
+        active: state.active,
+        stagedPlan: state.stagedPlan,
+        approval: state.approval,
+        undoSnapshot: state.undoSnapshot,
+        activityLog: state.activityLog,
+      }),
+    },
+  ),
+);
+
+export function useScoreView() {
+  const active = useTenscoreStore((s) => s.active);
+  const stagedPlan = useTenscoreStore((s) => s.stagedPlan);
+  const now = new Date();
+  const current = computeTenscore(active, { now });
+  const simulation =
+    stagedPlan.length > 0
+      ? simulateChanges(active, stagedPlan, { now })
+      : null;
+
+  return {
+    score: current.score,
+    label: scoreLabel(current.score),
+    factors: current.factors,
+    contributions: current.contributions,
+    projectedScore: simulation?.score.after,
+    simulation,
+  };
+}
+
+export function useFindingsView() {
+  const active = useTenscoreStore((s) => s.active);
+  const findingFilter = useTenscoreStore((s) => s.findingFilter);
+  const findings = deriveFindings(active, { now: new Date() });
+  if (findingFilter === "all") return findings;
+  return findings.filter((finding) =>
+    finding.types.some((type) => findingFilter.includes(type)),
+  );
+}
+
+export function usePlanHash() {
+  const stagedPlan = useTenscoreStore((s) => s.stagedPlan);
+  return hashPlan(normalizePlan(stagedPlan));
+}
+
+export function useRegistrationPhase():
+  | "no_plan"
+  | "staged"
+  | "approved"
+  | "applied" {
+  const stagedPlan = useTenscoreStore((s) => s.stagedPlan);
+  const approval = useTenscoreStore((s) => s.approval);
+  const undoSnapshot = useTenscoreStore((s) => s.undoSnapshot);
+
+  if (approval && stagedPlan.length > 0) return "approved";
+  if (stagedPlan.length > 0) return "staged";
+  if (undoSnapshot) return "applied";
+  return "no_plan";
+}
+
+export type { ActivityEntry };
