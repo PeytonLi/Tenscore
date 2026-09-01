@@ -88,6 +88,13 @@ export function getToolsForPhase(phase: RegistrationPhase): ToolDef[] {
       inputSchema: zodToJsonSchema(emptySchema),
       annotations: { readOnlyHint: true },
     },
+    {
+      name: "explain_next_step",
+      description:
+        "Explain why an action may be blocked and what the human should do next in the Tenscore UI.",
+      inputSchema: zodToJsonSchema(emptySchema),
+      annotations: { readOnlyHint: true },
+    },
   ];
 
   if (phase === "approved") {

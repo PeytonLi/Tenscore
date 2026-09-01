@@ -1,4 +1,8 @@
 import { buildCapabilityContract } from "@/domain/capabilities";
+import {
+  buildBlockedAction,
+  explainNextStep,
+} from "@/domain/blocked-action";
 import { proposePrivacyBudgetPlan } from "@/domain/privacy-budget";
 import { buildRedactedReport } from "@/domain/report";
 import { buildExposureTimeline } from "@/domain/timeline";
@@ -219,19 +223,42 @@ async function runTool(name: string, rawArgs: unknown): Promise<ToolResult> {
     }
     case "apply_approved_changes": {
       const args = applySchema.parse(rawArgs);
+      const phase = registrationPhase();
+      if (phase !== "approved") {
+        const blocked = buildBlockedAction(
+          "apply_approved_changes",
+          "APPLY_UNAVAILABLE",
+          phase,
+          now,
+        );
+        useTenscoreStore.getState().setBlockedAction(blocked);
+        return {
+          ok: false,
+          summary: blocked.title,
+          profileVersion: state.active.profileVersion,
+          error: { code: "APPLY_UNAVAILABLE", retryable: false },
+          nextSuggestedActions: [blocked.humanAction, "explain_next_step"],
+        };
+      }
       const before = computeTenscore(state.active, { now }).score;
       const error = useTenscoreStore.getState().apply(args.approvalId, "agent");
       const next = snapshot();
       const after = computeTenscore(next.active, { now }).score;
+      const blocked = next.blockedAction;
       return {
         ok: !error,
         summary: error ?? `Applied approved plan; score ${before} → ${after}`,
         profileVersion: next.active.profileVersion,
         score: { before, after },
         error: error
-          ? { code: "APPLY_FAILED", retryable: false }
+          ? {
+              code: blocked?.code ?? "APPLY_FAILED",
+              retryable: false,
+            }
           : undefined,
-        nextSuggestedActions: error ? [] : ["undo_last_change"],
+        nextSuggestedActions: error
+          ? [blocked?.humanAction ?? "explain_next_step"]
+          : ["undo_last_change"],
       };
     }
     case "undo_last_change": {
@@ -312,6 +339,19 @@ async function runTool(name: string, rawArgs: unknown): Promise<ToolResult> {
         summary: contract.summary,
         profileVersion: state.active.profileVersion,
         nextSuggestedActions: [contract.humanNextStep],
+      };
+    }
+    case "explain_next_step": {
+      emptySchema.parse(rawArgs ?? {});
+      const explanation = explainNextStep({
+        phase: registrationPhase(),
+        blocked: snapshot().blockedAction,
+      });
+      return {
+        ok: true,
+        summary: explanation.humanNextStep,
+        profileVersion: state.active.profileVersion,
+        nextSuggestedActions: explanation.suggestedTools,
       };
     }
     case "add_manual_service": {

@@ -11,6 +11,7 @@ import { ScorePanel } from "@/components/score/ScorePanel";
 import { ServiceList } from "@/components/services/ServiceList";
 import { StretchPanel } from "@/components/stretch/StretchPanel";
 import { ToolInspector } from "@/components/tool-inspector/ToolInspector";
+import { BlockedActionBanner } from "@/components/blocked/BlockedActionBanner";
 import { CapabilityContract } from "@/components/capability/CapabilityContract";
 import { CompatibilityBanner } from "@/components/webmcp/CompatibilityBanner";
 import { useRegisterTools } from "@/webmcp/use-register-tools";
@@ -72,6 +73,7 @@ function WorkspaceInner() {
       </header>
 
       <CompatibilityBanner />
+      <BlockedActionBanner />
 
       <div className="grid gap-4 lg:grid-cols-[280px_minmax(0,1fr)_320px]">
         <aside className="flex flex-col gap-4">

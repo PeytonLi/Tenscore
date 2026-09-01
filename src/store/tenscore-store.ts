@@ -25,6 +25,8 @@ import type {
   PlannedChange,
 } from "@/domain/types";
 import type { GraphFilter } from "@/domain/graph";
+import type { BlockedAction } from "@/domain/blocked-action";
+import { buildBlockedAction } from "@/domain/blocked-action";
 
 export type FocusState = {
   dataCategoryId?: string;
@@ -47,6 +49,7 @@ type TenscoreStore = SessionState & {
     resultSummary: string;
     ok: boolean;
   }>;
+  blockedAction: BlockedAction | null;
   selectProfile: (profileId: string) => void;
   setSelectedGrantId: (grantId: string | null) => void;
   setFocus: (focus: FocusState) => void;
@@ -70,6 +73,8 @@ type TenscoreStore = SessionState & {
     resultSummary: string;
     ok: boolean;
   }) => void;
+  setBlockedAction: (blocked: BlockedAction) => void;
+  clearBlockedAction: () => void;
 };
 
 function freshSession(profileId: string): SessionState {
@@ -93,6 +98,7 @@ export const useTenscoreStore = create<TenscoreStore>()(
       findingFilter: "all",
       graphFilter: "all",
       toolTrace: [],
+      blockedAction: null,
 
       selectProfile: (profileId) => {
         set({
@@ -102,6 +108,7 @@ export const useTenscoreStore = create<TenscoreStore>()(
           focus: {},
           findingFilter: "all",
           graphFilter: "all",
+          blockedAction: null,
         });
       },
 
@@ -123,18 +130,35 @@ export const useTenscoreStore = create<TenscoreStore>()(
 
       approve: () => {
         const result = approvePlan(get(), { actor: "user", now: new Date() });
-        set({ ...result.session });
+        set({ ...result.session, blockedAction: null });
         return result.ok ? result.session.approval!.id : result.error.message;
       },
 
       apply: (approvalId, actor = "agent") => {
+        const phase = registrationPhaseFrom(get());
         const result = applyApprovedChanges(get(), {
           approvalId,
           actor,
           now: new Date(),
         });
-        set({ ...result.session });
-        return result.ok ? null : result.error.message;
+        if (!result.ok) {
+          const code =
+            result.error.code === "APPROVAL_NOT_FOUND" &&
+            phase !== "approved"
+              ? "APPLY_UNAVAILABLE"
+              : result.error.code;
+          set({
+            ...result.session,
+            blockedAction: buildBlockedAction(
+              "apply_approved_changes",
+              code,
+              phase,
+            ),
+          });
+          return result.error.message;
+        }
+        set({ ...result.session, blockedAction: null });
+        return null;
       },
 
       undo: (actor = "user") => {
@@ -219,6 +243,9 @@ export const useTenscoreStore = create<TenscoreStore>()(
           ].slice(0, 40),
         });
       },
+
+      setBlockedAction: (blocked) => set({ blockedAction: blocked }),
+      clearBlockedAction: () => set({ blockedAction: null }),
     }),
     {
       name: "tenscore-demo",
@@ -269,6 +296,15 @@ export function usePlanHash() {
   return hashPlan(normalizePlan(stagedPlan));
 }
 
+function registrationPhaseFrom(
+  state: Pick<SessionState, "stagedPlan" | "approval" | "undoSnapshot">,
+): "no_plan" | "staged" | "approved" | "applied" {
+  if (state.approval && state.stagedPlan.length > 0) return "approved";
+  if (state.stagedPlan.length > 0) return "staged";
+  if (state.undoSnapshot) return "applied";
+  return "no_plan";
+}
+
 export function useRegistrationPhase():
   | "no_plan"
   | "staged"
@@ -278,10 +314,7 @@ export function useRegistrationPhase():
   const approval = useTenscoreStore((s) => s.approval);
   const undoSnapshot = useTenscoreStore((s) => s.undoSnapshot);
 
-  if (approval && stagedPlan.length > 0) return "approved";
-  if (stagedPlan.length > 0) return "staged";
-  if (undoSnapshot) return "applied";
-  return "no_plan";
+  return registrationPhaseFrom({ stagedPlan, approval, undoSnapshot });
 }
 
 export type { ActivityEntry };
