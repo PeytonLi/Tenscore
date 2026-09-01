@@ -36,7 +36,6 @@ import {
   type AgentPolicy,
   validatePlanAgainstPolicy,
 } from "@/domain/policy";
-import { computeTenscore } from "@/domain/scoring";
 
 export type FocusState = {
   dataCategoryId?: string;
@@ -65,6 +64,8 @@ type TenscoreStore = SessionState & {
   agentPolicy: AgentPolicy;
   replayStatus: "idle" | "running" | "waiting_approval" | "done";
   replayStepIndex: number;
+  pulseGrantIds: string[];
+  timelineScrubGrantIds: string[] | null;
   selectProfile: (profileId: string) => void;
   setSelectedGrantId: (grantId: string | null) => void;
   setFocus: (focus: FocusState) => void;
@@ -95,6 +96,8 @@ type TenscoreStore = SessionState & {
     replayStatus?: "idle" | "running" | "waiting_approval" | "done";
     replayStepIndex?: number;
   }) => void;
+  setPulseGrantIds: (grantIds: string[]) => void;
+  setTimelineScrubGrantIds: (grantIds: string[] | null) => void;
 };
 
 function freshSession(profileId: string): SessionState {
@@ -122,6 +125,10 @@ export const useTenscoreStore = create<TenscoreStore>()(
       lastApplyDiff: null,
       lastReceipt: null,
       agentPolicy: DEFAULT_AGENT_POLICY,
+      replayStatus: "idle" as const,
+      replayStepIndex: 0,
+      pulseGrantIds: [],
+      timelineScrubGrantIds: null,
 
       selectProfile: (profileId) => {
         set({
@@ -134,6 +141,8 @@ export const useTenscoreStore = create<TenscoreStore>()(
           blockedAction: null,
           lastApplyDiff: null,
           lastReceipt: null,
+          pulseGrantIds: [],
+          timelineScrubGrantIds: null,
         });
       },
 
@@ -313,6 +322,14 @@ export const useTenscoreStore = create<TenscoreStore>()(
       setBlockedAction: (blocked) => set({ blockedAction: blocked }),
       clearBlockedAction: () => set({ blockedAction: null }),
       setAgentPolicy: (policy) => set({ agentPolicy: policy }),
+      setReplayState: (input) =>
+        set({
+          replayStatus: input.replayStatus ?? get().replayStatus,
+          replayStepIndex: input.replayStepIndex ?? get().replayStepIndex,
+        }),
+      setPulseGrantIds: (grantIds) => set({ pulseGrantIds: grantIds }),
+      setTimelineScrubGrantIds: (grantIds) =>
+        set({ timelineScrubGrantIds: grantIds }),
     }),
     {
       name: "tenscore-demo",

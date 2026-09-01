@@ -49,3 +49,17 @@ export function buildExposureTimeline(
 
   return frames;
 }
+
+export function stateAtTimelineFrame(
+  state: ConsentState,
+  activeGrantIds: string[],
+): ConsentState {
+  const activeSet = new Set(activeGrantIds);
+  return {
+    ...state,
+    grants: state.grants.map((grant) => ({
+      ...grant,
+      active: activeSet.has(grant.id),
+    })),
+  };
+}

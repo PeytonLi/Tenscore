@@ -83,6 +83,26 @@ export async function executeTool(
     ok: result.ok,
   });
 
+  const visualTools = new Set([
+    "find_risky_access",
+    "trace_data_flow",
+    "inspect_permission",
+    "stage_changes",
+    "apply_approved_changes",
+  ]);
+  if (visualTools.has(name) && result.affectedIds?.length) {
+    const activeGrantIds = new Set(
+      snapshot().active.grants.map((grant) => grant.id),
+    );
+    const grantIds = result.affectedIds.filter((id) => activeGrantIds.has(id));
+    if (grantIds.length > 0) {
+      useTenscoreStore.getState().setPulseGrantIds(grantIds);
+      window.setTimeout(() => {
+        useTenscoreStore.getState().setPulseGrantIds([]);
+      }, 2400);
+    }
+  }
+
   return truncate(result);
 }
 

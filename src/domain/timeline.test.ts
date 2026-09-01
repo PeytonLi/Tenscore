@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildExposureTimeline } from "./timeline";
+import { buildExposureTimeline, stateAtTimelineFrame } from "./timeline";
 import type { ConsentState } from "./types";
 
 const state: ConsentState = {
@@ -68,5 +68,11 @@ describe("buildExposureTimeline", () => {
       expect.arrayContaining(["g-early", "g-late"]),
     );
     expect(timeline.at(-1)!.score).toBeLessThanOrEqual(timeline[0]!.score);
+  });
+
+  it("stateAtTimelineFrame activates only grants in frame", () => {
+    const frame = stateAtTimelineFrame(state, ["g-early"]);
+    expect(frame.grants.find((g) => g.id === "g-early")?.active).toBe(true);
+    expect(frame.grants.find((g) => g.id === "g-late")?.active).toBe(false);
   });
 });

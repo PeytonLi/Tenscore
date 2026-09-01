@@ -13,6 +13,7 @@ export function StretchPanel() {
   const stage = useTenscoreStore((s) => s.stage);
   const importActiveState = useTenscoreStore((s) => s.importActiveState);
   const addService = useTenscoreStore((s) => s.addService);
+  const setTimelineScrubGrantIds = useTenscoreStore((s) => s.setTimelineScrubGrantIds);
 
   const [targetScore, setTargetScore] = useState(8);
   const [preserve, setPreserve] = useState("Budget sync, Photo backup");
@@ -173,16 +174,30 @@ export function StretchPanel() {
                 min={0}
                 max={Math.max(timeline.length - 1, 0)}
                 value={Math.min(timelineIndex, timeline.length - 1)}
-                onChange={(event) => setTimelineIndex(Number(event.target.value))}
+                onChange={(event) => {
+                  const index = Number(event.target.value);
+                  setTimelineIndex(index);
+                  const selected = timeline[index];
+                  if (selected) {
+                    setTimelineScrubGrantIds(selected.activeGrantIds);
+                  }
+                }}
                 className="mt-2 w-full"
               />
               {frame ? (
                 <p className="mt-2 text-xs text-muted">
                   {frame.at.slice(0, 10)} · score {frame.score.toFixed(1)} ·{" "}
                   {frame.activeGrantIds.length} grants · {frame.serviceCount}{" "}
-                  services
+                  services · map synced
                 </p>
               ) : null}
+              <button
+                type="button"
+                onClick={() => setTimelineScrubGrantIds(null)}
+                className="mt-2 rounded-lg border border-border bg-surface px-2 py-1 text-xs"
+              >
+                Return map to live state
+              </button>
             </>
           )}
         </div>

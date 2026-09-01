@@ -13,11 +13,8 @@ import {
   type NodeProps,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
-import {
-  buildConsentGraph,
-  layoutConsentGraph,
-  type GraphFilter,
-} from "@/domain/graph";
+import { buildConsentGraph, layoutConsentGraph, type GraphFilter } from "@/domain/graph";
+import { stateAtTimelineFrame } from "@/domain/timeline";
 import { useTenscoreStore } from "@/store/tenscore-store";
 
 type ConsentNodeData = {
@@ -27,6 +24,7 @@ type ConsentNodeData = {
   severity?: "none" | "review" | "high";
   dimmed: boolean;
   inPlan: boolean;
+  pulsing: boolean;
 };
 
 function ConsentNode({ data }: NodeProps) {
@@ -57,7 +55,9 @@ function ConsentNode({ data }: NodeProps) {
       }${nodeData.inPlan ? ", in staged plan" : ""}`}
       className={`px-3 py-2 text-center shadow-sm transition ${base} ${severityRing} ${
         nodeData.dimmed ? "opacity-30" : "opacity-100"
-      } ${nodeData.inPlan ? "outline outline-2 outline-offset-2 outline-teal" : ""}`}
+      } ${nodeData.inPlan ? "outline outline-2 outline-offset-2 outline-teal" : ""} ${
+        nodeData.pulsing ? "animate-pulse ring-2 ring-teal/60" : ""
+      }`}
     >
       <Handle type="target" position={Position.Left} className="!bg-teal !w-2 !h-2" />
       <p className="text-xs font-semibold">{nodeData.label}</p>
@@ -94,13 +94,19 @@ export function ConsentMap() {
   const stagedPlan = useTenscoreStore((s) => s.stagedPlan);
   const focus = useTenscoreStore((s) => s.focus);
   const setSelectedGrantId = useTenscoreStore((s) => s.setSelectedGrantId);
+  const pulseGrantIds = useTenscoreStore((s) => s.pulseGrantIds);
+  const timelineScrubGrantIds = useTenscoreStore((s) => s.timelineScrubGrantIds);
   const graphFilter = useTenscoreStore((s) => s.graphFilter);
   const setGraphFilter = useTenscoreStore((s) => s.setGraphFilter);
 
   const { nodes, edges } = useMemo(() => {
+    const graphState =
+      timelineScrubGrantIds !== null
+        ? stateAtTimelineFrame(active, timelineScrubGrantIds)
+        : active;
     const graph = buildConsentGraph({
-      state: active,
-      stagedPlan,
+      state: graphState,
+      stagedPlan: timelineScrubGrantIds !== null ? [] : stagedPlan,
       focus,
       filter: graphFilter,
       now: new Date(),
@@ -118,6 +124,12 @@ export function ConsentMap() {
         severity: node.severity,
         dimmed: node.dimmed,
         inPlan: node.inPlan,
+        pulsing: graph.edges.some(
+          (edge) =>
+            edge.grantId &&
+            pulseGrantIds.includes(edge.grantId) &&
+            (edge.source === node.id || edge.target === node.id),
+        ),
       } satisfies ConsentNodeData,
       draggable: true,
     }));
@@ -126,7 +138,10 @@ export function ConsentMap() {
       id: edge.id,
       source: edge.source,
       target: edge.target,
-      animated: edge.kind === "projected" || edge.inPlan,
+      animated:
+        edge.kind === "projected" ||
+        edge.inPlan ||
+        Boolean(edge.grantId && pulseGrantIds.includes(edge.grantId)),
       className: edge.kind === "projected" || edge.inPlan ? "opacity-80" : undefined,
       style: {
         stroke:
@@ -162,7 +177,7 @@ export function ConsentMap() {
     }));
 
     return { nodes: flowNodes, edges: flowEdges };
-  }, [active, stagedPlan, focus, graphFilter]);
+  }, [active, stagedPlan, focus, graphFilter, pulseGrantIds, timelineScrubGrantIds]);
 
   return (
     <section className="flex h-[520px] flex-col overflow-hidden rounded-2xl border border-border bg-surface">
