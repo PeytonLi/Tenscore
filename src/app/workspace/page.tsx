@@ -11,6 +11,7 @@ import { ScorePanel } from "@/components/score/ScorePanel";
 import { ServiceList } from "@/components/services/ServiceList";
 import { StretchPanel } from "@/components/stretch/StretchPanel";
 import { ToolInspector } from "@/components/tool-inspector/ToolInspector";
+import { CapabilityContract } from "@/components/capability/CapabilityContract";
 import { CompatibilityBanner } from "@/components/webmcp/CompatibilityBanner";
 import { useRegisterTools } from "@/webmcp/use-register-tools";
 import { useTenscoreStore } from "@/store/tenscore-store";
@@ -82,6 +83,7 @@ function WorkspaceInner() {
           <ServiceList />
         </section>
         <aside className="flex flex-col gap-4">
+          <CapabilityContract />
           <PlanDrawer />
           <StretchPanel />
           <ActivityLog />

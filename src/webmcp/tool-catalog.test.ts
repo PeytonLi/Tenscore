@@ -35,6 +35,7 @@ describe("getToolsForPhase", () => {
           "trace_data_flow",
           "inspect_permission",
           "simulate_changes",
+          "get_agent_capabilities",
         ]),
       );
     }

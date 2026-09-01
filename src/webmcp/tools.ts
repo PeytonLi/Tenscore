@@ -1,3 +1,4 @@
+import { buildCapabilityContract } from "@/domain/capabilities";
 import { proposePrivacyBudgetPlan } from "@/domain/privacy-budget";
 import { buildRedactedReport } from "@/domain/report";
 import { buildExposureTimeline } from "@/domain/timeline";
@@ -6,6 +7,7 @@ import { computeTenscore } from "@/domain/scoring";
 import { simulateChanges } from "@/domain/simulation";
 import type { PlannedChange } from "@/domain/types";
 import { useTenscoreStore } from "@/store/tenscore-store";
+import type { RegistrationPhase } from "./tool-catalog";
 import {
   addServiceSchema,
   applySchema,
@@ -35,6 +37,14 @@ function truncate(value: unknown): string {
 
 function snapshot() {
   return useTenscoreStore.getState();
+}
+
+function registrationPhase(): RegistrationPhase {
+  const { stagedPlan, approval, undoSnapshot } = snapshot();
+  if (approval && stagedPlan.length > 0) return "approved";
+  if (stagedPlan.length > 0) return "staged";
+  if (undoSnapshot) return "applied";
+  return "no_plan";
 }
 
 export async function executeTool(
@@ -292,6 +302,16 @@ async function runTool(name: string, rawArgs: unknown): Promise<ToolResult> {
         profileVersion: state.active.profileVersion,
         score: latest ? { before: latest.score } : undefined,
         affectedIds: latest?.activeGrantIds.slice(0, 8),
+      };
+    }
+    case "get_agent_capabilities": {
+      emptySchema.parse(rawArgs ?? {});
+      const contract = buildCapabilityContract(registrationPhase());
+      return {
+        ok: true,
+        summary: contract.summary,
+        profileVersion: state.active.profileVersion,
+        nextSuggestedActions: [contract.humanNextStep],
       };
     }
     case "add_manual_service": {

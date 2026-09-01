@@ -81,6 +81,13 @@ export function getToolsForPhase(phase: RegistrationPhase): ToolDef[] {
       inputSchema: zodToJsonSchema(emptySchema),
       annotations: { readOnlyHint: true },
     },
+    {
+      name: "get_agent_capabilities",
+      description:
+        "Return the agent capability contract: available tools, denied tools, lifecycle phase, and what the human must do next.",
+      inputSchema: zodToJsonSchema(emptySchema),
+      annotations: { readOnlyHint: true },
+    },
   ];
 
   if (phase === "approved") {
