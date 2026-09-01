@@ -62,6 +62,9 @@ type TenscoreStore = SessionState & {
   blockedAction: BlockedAction | null;
   lastApplyDiff: GrantDiff[] | null;
   lastReceipt: ConsentReceipt | null;
+  agentPolicy: AgentPolicy;
+  replayStatus: "idle" | "running" | "waiting_approval" | "done";
+  replayStepIndex: number;
   selectProfile: (profileId: string) => void;
   setSelectedGrantId: (grantId: string | null) => void;
   setFocus: (focus: FocusState) => void;
@@ -87,6 +90,11 @@ type TenscoreStore = SessionState & {
   }) => void;
   setBlockedAction: (blocked: BlockedAction) => void;
   clearBlockedAction: () => void;
+  setAgentPolicy: (policy: AgentPolicy) => void;
+  setReplayState: (input: {
+    replayStatus?: "idle" | "running" | "waiting_approval" | "done";
+    replayStepIndex?: number;
+  }) => void;
 };
 
 function freshSession(profileId: string): SessionState {
@@ -113,6 +121,7 @@ export const useTenscoreStore = create<TenscoreStore>()(
       blockedAction: null,
       lastApplyDiff: null,
       lastReceipt: null,
+      agentPolicy: DEFAULT_AGENT_POLICY,
 
       selectProfile: (profileId) => {
         set({
@@ -134,8 +143,25 @@ export const useTenscoreStore = create<TenscoreStore>()(
       setGraphFilter: (filter) => set({ graphFilter: filter }),
 
       stage: (changes, actor = "user") => {
+        if (actor === "agent") {
+          const policyCheck = validatePlanAgainstPolicy(
+            get().active,
+            changes,
+            get().agentPolicy,
+          );
+          if (!policyCheck.ok) {
+            set({
+              blockedAction: buildBlockedAction(
+                "stage_changes",
+                "POLICY_VIOLATION",
+                registrationPhaseFrom(get()),
+              ),
+            });
+            return policyCheck.error.message;
+          }
+        }
         const result = stageChanges(get(), changes, { actor, now: new Date() });
-        set({ ...result.session });
+        set({ ...result.session, blockedAction: null });
         return result.ok ? null : result.error.message;
       },
 
@@ -286,6 +312,7 @@ export const useTenscoreStore = create<TenscoreStore>()(
 
       setBlockedAction: (blocked) => set({ blockedAction: blocked }),
       clearBlockedAction: () => set({ blockedAction: null }),
+      setAgentPolicy: (policy) => set({ agentPolicy: policy }),
     }),
     {
       name: "tenscore-demo",
@@ -296,6 +323,7 @@ export const useTenscoreStore = create<TenscoreStore>()(
         approval: state.approval,
         undoSnapshot: state.undoSnapshot,
         activityLog: state.activityLog,
+        agentPolicy: state.agentPolicy,
       }),
     },
   ),

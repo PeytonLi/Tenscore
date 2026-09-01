@@ -11,6 +11,7 @@ import { ScorePanel } from "@/components/score/ScorePanel";
 import { ServiceList } from "@/components/services/ServiceList";
 import { StretchPanel } from "@/components/stretch/StretchPanel";
 import { ToolInspector } from "@/components/tool-inspector/ToolInspector";
+import { AgentReplayPanel } from "@/components/replay/AgentReplayPanel";
 import { AgentPolicyPanel } from "@/components/policy/AgentPolicyPanel";
 import { ConsentReceiptPanel } from "@/components/receipt/ConsentReceiptPanel";
 import { ApplyDiffPanel } from "@/components/diff/ApplyDiffPanel";
@@ -89,6 +90,7 @@ function WorkspaceInner() {
         </section>
         <aside className="flex flex-col gap-4">
           <CapabilityContract />
+          <AgentPolicyPanel />
           <PlanDrawer />
           <ApplyDiffPanel />
           <ConsentReceiptPanel />
