@@ -11,6 +11,7 @@ import { ScorePanel } from "@/components/score/ScorePanel";
 import { ServiceList } from "@/components/services/ServiceList";
 import { StretchPanel } from "@/components/stretch/StretchPanel";
 import { ToolInspector } from "@/components/tool-inspector/ToolInspector";
+import { AgentPolicyPanel } from "@/components/policy/AgentPolicyPanel";
 import { ConsentReceiptPanel } from "@/components/receipt/ConsentReceiptPanel";
 import { ApplyDiffPanel } from "@/components/diff/ApplyDiffPanel";
 import { BlockedActionBanner } from "@/components/blocked/BlockedActionBanner";
@@ -90,6 +91,7 @@ function WorkspaceInner() {
           <CapabilityContract />
           <PlanDrawer />
           <ApplyDiffPanel />
+          <ConsentReceiptPanel />
           <StretchPanel />
           <ActivityLog />
           <ToolInspector />

@@ -355,6 +355,24 @@ async function runTool(name: string, rawArgs: unknown): Promise<ToolResult> {
         nextSuggestedActions: explanation.suggestedTools,
       };
     }
+    case "get_consent_receipt": {
+      emptySchema.parse(rawArgs ?? {});
+      const receipt = snapshot().lastReceipt;
+      if (!receipt) {
+        return {
+          ok: false,
+          summary: "No consent receipt yet — apply an approved plan first",
+          profileVersion: state.active.profileVersion,
+          error: { code: "NO_RECEIPT", retryable: false },
+        };
+      }
+      return {
+        ok: true,
+        summary: `Receipt ${receipt.id}: score ${receipt.scoreBefore.toFixed(1)} → ${receipt.scoreAfter.toFixed(1)}`,
+        profileVersion: state.active.profileVersion,
+        nextSuggestedActions: ["undo_last_change"],
+      };
+    }
     case "add_manual_service": {
       const args = addServiceSchema.parse(rawArgs);
       const error = useTenscoreStore.getState().addService({

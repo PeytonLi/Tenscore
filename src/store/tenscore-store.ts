@@ -31,6 +31,11 @@ import type { GrantDiff } from "@/domain/diff";
 import { buildApplyDiff } from "@/domain/diff";
 import type { ConsentReceipt } from "@/domain/receipt";
 import { buildConsentReceipt } from "@/domain/receipt";
+import {
+  DEFAULT_AGENT_POLICY,
+  type AgentPolicy,
+  validatePlanAgainstPolicy,
+} from "@/domain/policy";
 import { computeTenscore } from "@/domain/scoring";
 
 export type FocusState = {

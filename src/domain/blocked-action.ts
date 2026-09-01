@@ -44,6 +44,11 @@ const ERROR_COPY: Record<
     message: "apply_approved_changes is locked until you approve in the UI.",
     humanAction: "Click Approve this plan in the change plan drawer.",
   },
+  POLICY_VIOLATION: {
+    title: "Plan denied — agent policy violation",
+    message: "The proposed changes violate your agent policy constraints.",
+    humanAction: "Adjust the agent policy or ask for a compliant plan.",
+  },
 };
 
 export function buildBlockedAction(
