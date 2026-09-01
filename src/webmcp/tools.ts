@@ -5,6 +5,7 @@ import {
 } from "@/domain/blocked-action";
 import { proposePrivacyBudgetPlan } from "@/domain/privacy-budget";
 import { buildRedactedReport } from "@/domain/report";
+import { buildConsentReceipt } from "@/domain/receipt";
 import { buildExposureTimeline } from "@/domain/timeline";
 import { deriveFindings, filterFindings } from "@/domain/findings";
 import { computeTenscore } from "@/domain/scoring";

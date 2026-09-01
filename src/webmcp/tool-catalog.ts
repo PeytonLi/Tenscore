@@ -95,6 +95,13 @@ export function getToolsForPhase(phase: RegistrationPhase): ToolDef[] {
       inputSchema: zodToJsonSchema(emptySchema),
       annotations: { readOnlyHint: true },
     },
+    {
+      name: "get_consent_receipt",
+      description:
+        "Return the consent receipt for the most recent successful apply, including approval id, plan hash, and changes.",
+      inputSchema: zodToJsonSchema(emptySchema),
+      annotations: { readOnlyHint: true },
+    },
   ];
 
   if (phase === "approved") {

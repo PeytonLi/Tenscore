@@ -29,6 +29,9 @@ import type { BlockedAction } from "@/domain/blocked-action";
 import { buildBlockedAction } from "@/domain/blocked-action";
 import type { GrantDiff } from "@/domain/diff";
 import { buildApplyDiff } from "@/domain/diff";
+import type { ConsentReceipt } from "@/domain/receipt";
+import { buildConsentReceipt } from "@/domain/receipt";
+import { computeTenscore } from "@/domain/scoring";
 
 export type FocusState = {
   dataCategoryId?: string;
@@ -53,6 +56,7 @@ type TenscoreStore = SessionState & {
   }>;
   blockedAction: BlockedAction | null;
   lastApplyDiff: GrantDiff[] | null;
+  lastReceipt: ConsentReceipt | null;
   selectProfile: (profileId: string) => void;
   setSelectedGrantId: (grantId: string | null) => void;
   setFocus: (focus: FocusState) => void;
@@ -102,6 +106,8 @@ export const useTenscoreStore = create<TenscoreStore>()(
       graphFilter: "all",
       toolTrace: [],
       blockedAction: null,
+      lastApplyDiff: null,
+      lastReceipt: null,
 
       selectProfile: (profileId) => {
         set({
@@ -113,6 +119,7 @@ export const useTenscoreStore = create<TenscoreStore>()(
           graphFilter: "all",
           blockedAction: null,
           lastApplyDiff: null,
+          lastReceipt: null,
         });
       },
 
@@ -142,6 +149,8 @@ export const useTenscoreStore = create<TenscoreStore>()(
         const phase = registrationPhaseFrom(get());
         const beforeState = get().active;
         const plan = [...get().stagedPlan];
+        const approval = get().approval;
+        const scoreBefore = computeTenscore(beforeState, { now: new Date() }).score;
         const result = applyApprovedChanges(get(), {
           approvalId,
           actor,
@@ -163,10 +172,26 @@ export const useTenscoreStore = create<TenscoreStore>()(
           });
           return result.error.message;
         }
+        const diff = buildApplyDiff(beforeState, result.session.active, plan);
+        const scoreAfter = computeTenscore(result.session.active, {
+          now: new Date(),
+        }).score;
+        const receipt =
+          approval &&
+          buildConsentReceipt({
+            before: beforeState,
+            after: result.session.active,
+            approval,
+            appliedBy: actor,
+            changes: diff,
+            scoreBefore,
+            scoreAfter,
+          });
         set({
           ...result.session,
           blockedAction: null,
-          lastApplyDiff: buildApplyDiff(beforeState, result.session.active, plan),
+          lastApplyDiff: diff,
+          lastReceipt: receipt ?? null,
         });
         return null;
       },
