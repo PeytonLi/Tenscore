@@ -1,5 +1,6 @@
 "use client";
 
+import { isUntrustedSeedText, stripUntrustedMarker } from "@/domain/untrusted";
 import { useTenscoreStore } from "@/store/tenscore-store";
 
 export function ServiceList() {
@@ -89,7 +90,15 @@ export function ServiceList() {
       {selectedGrant ? (
         <div className="mt-4 rounded-xl border border-teal/30 bg-teal-soft/50 p-3 text-sm">
           <h3 className="font-semibold">Permission detail</h3>
-          <p className="mt-1 text-muted">{selectedGrant.purpose}</p>
+          {isUntrustedSeedText(selectedGrant.purpose) ? (
+            <p className="mt-2 rounded-lg border border-warning/40 bg-warning/10 px-2 py-1.5 text-xs text-warning">
+              Untrusted seed content detected — displayed for inspection only, never
+              executed as instructions.
+            </p>
+          ) : null}
+          <p className="mt-1 text-muted">
+            {stripUntrustedMarker(selectedGrant.purpose)}
+          </p>
           <p className="mt-2 font-[family-name:var(--font-mono)] text-xs">
             {selectedGrant.id}
           </p>
