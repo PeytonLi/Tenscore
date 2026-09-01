@@ -39,7 +39,7 @@ Production: https://tenscore-two.vercel.app
 
 Tools register through `document.modelContext.registerTool` with `AbortController` lifecycle cleanup.
 
-**Always-on read/analysis tools:** `get_consent_overview`, `find_risky_access`, `trace_data_flow`, `inspect_permission`, `simulate_changes`, `propose_budget_plan`, `get_redacted_report`, `get_exposure_timeline`
+**Always-on read/analysis tools:** `get_consent_overview`, `find_risky_access`, `trace_data_flow`, `inspect_permission`, `simulate_changes`, `propose_budget_plan`, `get_redacted_report`, `get_exposure_timeline`, `get_agent_capabilities`, `explain_next_step`, `get_consent_receipt`
 
 | Phase | Extra tools |
 |---|---|
@@ -56,6 +56,21 @@ Tools register through `document.modelContext.registerTool` with `AbortControlle
 4. Prompt: *Find stale or excessive access, trace my precise location, and prepare a cleanup that preserves budgeting and photo backup.*
 5. Approve the plan in the UI, then ask the agent to apply it.
 6. Use **Reset profile** between judging runs.
+
+**No WebMCP browser?** Use **Demo agent replay** in the workspace — it runs the judge journey, pauses for your approval, then resumes.
+
+## Winning features
+
+- **Agent capability contract** — see which tools are available vs denied per lifecycle phase
+- **Blocked-action banner** — failed apply attempts surface in the UI with human next steps
+- **Permission diff** — staged and applied before/after grant changes
+- **Consent receipt** — auditable artifact after each successful apply
+- **Agent policy** — user-defined constraints on what the agent may stage
+- **Demo agent replay** — deterministic judge path without WebMCP
+- **Scenario challenges** — per-profile pass/fail goals
+- **Graph pulse** — consent map highlights grants when agent tools run
+- **Timeline map sync** — exposure scrubber drives historical graph state
+- **Adversarial seed** — injection text in demo data with untrusted-content warnings
 
 ## Demo profiles
 
