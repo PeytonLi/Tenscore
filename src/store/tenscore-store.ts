@@ -27,6 +27,8 @@ import type {
 import type { GraphFilter } from "@/domain/graph";
 import type { BlockedAction } from "@/domain/blocked-action";
 import { buildBlockedAction } from "@/domain/blocked-action";
+import type { GrantDiff } from "@/domain/diff";
+import { buildApplyDiff } from "@/domain/diff";
 
 export type FocusState = {
   dataCategoryId?: string;
@@ -50,6 +52,7 @@ type TenscoreStore = SessionState & {
     ok: boolean;
   }>;
   blockedAction: BlockedAction | null;
+  lastApplyDiff: GrantDiff[] | null;
   selectProfile: (profileId: string) => void;
   setSelectedGrantId: (grantId: string | null) => void;
   setFocus: (focus: FocusState) => void;
@@ -109,6 +112,7 @@ export const useTenscoreStore = create<TenscoreStore>()(
           findingFilter: "all",
           graphFilter: "all",
           blockedAction: null,
+          lastApplyDiff: null,
         });
       },
 
@@ -136,6 +140,8 @@ export const useTenscoreStore = create<TenscoreStore>()(
 
       apply: (approvalId, actor = "agent") => {
         const phase = registrationPhaseFrom(get());
+        const beforeState = get().active;
+        const plan = [...get().stagedPlan];
         const result = applyApprovedChanges(get(), {
           approvalId,
           actor,
@@ -157,7 +163,11 @@ export const useTenscoreStore = create<TenscoreStore>()(
           });
           return result.error.message;
         }
-        set({ ...result.session, blockedAction: null });
+        set({
+          ...result.session,
+          blockedAction: null,
+          lastApplyDiff: buildApplyDiff(beforeState, result.session.active, plan),
+        });
         return null;
       },
 

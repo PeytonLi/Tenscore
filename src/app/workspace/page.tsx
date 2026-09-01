@@ -11,6 +11,7 @@ import { ScorePanel } from "@/components/score/ScorePanel";
 import { ServiceList } from "@/components/services/ServiceList";
 import { StretchPanel } from "@/components/stretch/StretchPanel";
 import { ToolInspector } from "@/components/tool-inspector/ToolInspector";
+import { ApplyDiffPanel } from "@/components/diff/ApplyDiffPanel";
 import { BlockedActionBanner } from "@/components/blocked/BlockedActionBanner";
 import { CapabilityContract } from "@/components/capability/CapabilityContract";
 import { CompatibilityBanner } from "@/components/webmcp/CompatibilityBanner";
@@ -87,6 +88,7 @@ function WorkspaceInner() {
         <aside className="flex flex-col gap-4">
           <CapabilityContract />
           <PlanDrawer />
+          <ApplyDiffPanel />
           <StretchPanel />
           <ActivityLog />
           <ToolInspector />
